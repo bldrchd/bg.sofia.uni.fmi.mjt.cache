@@ -4,8 +4,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.internal.runners.ErrorReportingRunner;
-
 public class MemCache<K, V> implements Cache<K, V> {
 
     private Map<K, V> genericCache = null; //trying with initialization 
@@ -50,27 +48,56 @@ public class MemCache<K, V> implements Cache<K, V> {
     @Override
     public void set(K key, V value, LocalDateTime expiresAt) throws CapacityExceededException {
         
-        if (key == null || (key != null && value == null))
+        if (key == null ||  value == null)
             return;
         if (this.size() < this.capacity) {
 
             this.genericCache.put(key, value);
             this.expirationCache.put(key, expiresAt);
+
             return;
-             //TODO - should not exit before check for existing
-        } 
-        for (K keyIterator : genericCache.keySet()) 
+        } else {
+    
+            for (K keyIterator : genericCache.keySet()) {
+                if (this.expirationCache.get(keyIterator) != null
+                        && this.expirationCache.get(keyIterator).isBefore(LocalDateTime.now())) {
+                
+                    this.genericCache.remove(keyIterator);
+                    this.expirationCache.remove(keyIterator);
+                
+                    this.set(key, value, expiresAt);
+                    return;
+                } else {            
+                    throw new CapacityExceededException("Capacity Exceeded!");
+                }
+            }
+        }
+    }
+/*    public void set(K key, V value, LocalDateTime expiresAt) throws CapacityExceededException {
+        
+        if (key == null || (key != null && value == null))
+            return;
+        if (this.size() < this.capacity) {
+                this.genericCache.put(key, value);
+                this.expirationCache.put(key, expiresAt);
+                return;
+        }
+        for (K keyIterator : genericCache.keySet()) {
+            
             if (this.expirationCache.get(keyIterator) != null
-                    && this.expirationCache.get(keyIterator).isBefore(LocalDateTime.now())) {
+                     && this.expirationCache.get(keyIterator).isBefore(LocalDateTime.now())) {
+             
                 this.genericCache.remove(keyIterator);
                 this.expirationCache.remove(keyIterator);
-            
+                
                 this.set(key, value, expiresAt);
-                return; 
+                    return; 
             } else {             
-                throw new CapacityExceededException("Capacity Exceeded!");
+                    throw new CapacityExceededException("Capacity Exceeded!");
             }
-    } 
+        }*/
+        
+   // } 
 
     @Override
     public LocalDateTime getExpiration(K key) {
@@ -86,7 +113,6 @@ public class MemCache<K, V> implements Cache<K, V> {
         if (!this.genericCache.containsKey(key)) {
             return false; 
         }
-
         this.genericCache.remove(key);
         this.expirationCache.remove(key);
         return true;
