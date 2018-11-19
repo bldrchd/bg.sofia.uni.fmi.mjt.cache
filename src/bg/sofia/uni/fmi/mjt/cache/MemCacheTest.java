@@ -11,7 +11,7 @@ import org.junit.Test;
 public class MemCacheTest<K, V> {
 
     private MemCache<Integer, String> mc;
-    private LocalDateTime ldt = LocalDateTime.now().plusMinutes(2);
+    private LocalDateTime ldt = LocalDateTime.now().plusMinutes(1);
 
     @Before
     public void setup() {
@@ -66,34 +66,29 @@ public class MemCacheTest<K, V> {
 
     @Test
     public void testKeyStorageWhenKeyIsDublicated() throws CapacityExceededException {
-
             mc.set(1, "one", LocalDateTime.now().plusMinutes(1));
             mc.set(1, "two", LocalDateTime.now().plusMinutes(1));
-
         assertEquals("two", mc.get(1));
-    }
-
-    private void setLowCacheCapacity() throws CapacityExceededException {
-        mc = new MemCache<>(2);
-            mc.set(1, "one", LocalDateTime.now().plusMinutes(1));
-            mc.set(2, "two", LocalDateTime.now().plusMinutes(1));
     }
 
     @Test(expected = CapacityExceededException.class)
     public void testWhenCapacityIsExceeded() throws CapacityExceededException {
-        mc = new MemCache<>(1);
-        mc.set(1, "one", LocalDateTime.now().plusMinutes(1));
-        mc.set(2, "two", LocalDateTime.now().plusMinutes(1));
+        mc = new MemCache<>(2);
+        fillWIthData();
     }
 
     @Test
     public void testRemoveContainedKeyWhenCapacityExceeded() throws CapacityExceededException{
-            setLowCacheCapacity();
+        mc = new MemCache<>(2);
+        try {
+            fillWIthData();
+        } catch (CapacityExceededException e) {
             assertEquals("one", mc.get(1));
-                mc.remove(1);
+            mc.remove(1);
             assertEquals(null, mc.get(1));
-                mc.set(1, "one again", LocalDateTime.now().plusMinutes(1));
+            mc.set(1, "one again", LocalDateTime.now().plusMinutes(1));
             assertEquals("one again", mc.get(1));
+        } 
     }
 
     @Test
